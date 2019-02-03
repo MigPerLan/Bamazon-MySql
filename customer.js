@@ -8,6 +8,10 @@ const connection = mysql.createConnection({
     password: "root",
     database: "bamazon_db"
 });
+function validator(value) {
+    var reg = /^\d+$/;
+    return reg.test(value) || "Please enter a number!";
+}
 
 function showAll(func) {
     var select = "SELECT * FROM products";
@@ -31,13 +35,14 @@ function inqPrompt() {
         .prompt([
             {
                 name: "item",
-                message: "Enter ID of the item would you like to buy:"
-
+                message: "Enter ID of the item would you like to buy:",
+                validate: validator
             },
 
             {
                 name: "quantity",
-                message: "How many would you like to buy?:"
+                message: "How many would you like to buy?:",
+                validate: validator
             }
 
         ]
@@ -49,13 +54,11 @@ function inqPrompt() {
             connection.query(select, [id], function (err, result) {
                 if (err) throw err;
                 var quantity = answer.quantity;
+                var totalSpent = result[0].price * answer.quantity;
                 var stock = result[0].stock_quantity;
                 var remaining = result[0].stock_quantity -= quantity;
                 // if not enough stock or answer is not a number
-                if (quantity > stock || quantity === NaN) {
-                    console.log("Can not continue with transaction");
-                }
-                else if (quantity < stock || quantity === stock) {
+                if (quantity <= stock) {
                     // function to update stock 
                     function update() {
                         var upSyn = `UPDATE products SET stock_quantity = ? WHERE item_id = ?`;
@@ -70,7 +73,7 @@ function inqPrompt() {
                         console.log(`
                     ______________________________________
                     | You bought : ${result[0].product_name}  |
-                    | Total spent: $${result[0].price}    |
+                    | Total spent: $${totalSpent}    |
                     | Only ${result[0].stock_quantity} left!       |
                     ---------------------------------------
                     `);
@@ -83,7 +86,7 @@ function inqPrompt() {
                     console.log("ERROR");
 
                 }
-
+                inqPrompt()
             });
 
 
@@ -91,30 +94,3 @@ function inqPrompt() {
         });
 };
 showAll(inqPrompt);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// connection.connect(function (err) {
-//    if (err) throw (err);
-
-//     console.log("connected to mySQL with id: " + connection.threadId);
-//     select();
-
-
-// });
